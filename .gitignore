@@ -1,0 +1,9 @@
+.ipynb_checkpoints
+*.pyc
+*.ipynb
+*.npy
+
+output/
+datasets/
+pretrained/
+__pycache__/

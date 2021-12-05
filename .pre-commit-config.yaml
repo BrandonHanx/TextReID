@@ -1,0 +1,33 @@
+repos:
+
+  - repo: https://github.com/psf/black
+    rev: 20.8b1 # Replace by any tag/version: https://github.com/psf/black/tags
+    hooks:
+      - id: black
+        language_version: python3 # Should be a command that runs python3.6+
+
+  # isort
+  - repo: https://github.com/timothycrosley/isort
+    rev: 5.6.4
+    hooks:
+      - id: isort
+
+  # flake8
+  - repo: https://github.com/PyCQA/flake8
+    rev: 3.8.3
+    hooks:
+      - id: flake8
+        args: ["--config=setup.cfg", "--ignore=W504, W503, E501, E203, E741, F821"]
+
+  # pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace  # Trim trailing whitespace
+      - id: check-merge-conflict  # Check for files that contain merge conflict strings
+      - id: end-of-file-fixer  # Make sure files end in a newline and only a newline
+      - id: requirements-txt-fixer  # Sort entries in requirements.txt and remove incorrect entry for pkg-resources==0.0.0
+      - id: fix-encoding-pragma  # Remove the coding pragma: # -*- coding: utf-8 -*-
+        args: ["--remove"]
+      - id: mixed-line-ending  # Replace or check mixed line ending
+        args: ["--fix=lf"]
