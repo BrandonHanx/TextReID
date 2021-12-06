@@ -2,7 +2,7 @@
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/text-based-person-search-with-limited-data/nlp-based-person-retrival-on-cuhk-pedes)](https://paperswithcode.com/sota/nlp-based-person-retrival-on-cuhk-pedes?p=text-based-person-search-with-limited-data)
 
-This is the codebase for our [BMVC 2021 paper](https://arxiv.org/abs/2110.10807). 
+This is the codebase for our [BMVC 2021 paper](https://arxiv.org/abs/2110.10807).
 
 Slides and video for the online presentation are now available at [BMVC 2021 virtual conference website](https://www.bmvc2021-virtualconference.com/conference/papers/paper_0044.html).
 
@@ -51,6 +51,16 @@ datasets
         └── train_query
 ```
 
+### Download CLIP weights
+```bash
+mkdir pretrained/clip/
+cd pretrained/clip
+wget https://openaipublic.azureedge.net/clip/models/afeb0e10f9e5a86da6080e35cf09123aca3b358a0c3e3b6c78a7b63bc04b6762/RN50.pt
+wget https://openaipublic.azureedge.net/clip/models/8fa8567bab74a42d41c5915025a8e4538c3bdbe8804a470a72f30b0d94fab599/RN101.pt
+cd -
+
+```
+
 ### Train
 ```bash
 python train_net.py \
@@ -66,7 +76,7 @@ python test_net.py \
 
 ## TODO
 - [ ] Fix the bug of multi-gpu runninng.
-- [ ] Add dataloader for [ICFG-PEEDES](https://github.com/zifyloo/SSAN).
+- [ ] Add dataloader for [ICFG-PEDES](https://github.com/zifyloo/SSAN).
 
 ## Citation
 If you find this project useful for your research, please use the following BibTeX entry.
