@@ -1,5 +1,6 @@
 import logging
 import math
+import os
 from collections import OrderedDict
 
 import torch
@@ -245,7 +246,7 @@ def state_filter(state_dict, final_stage_resolution):
 def modified_resnet50(
     input_resolution,
     last_stride,
-    pretrained=False,
+    pretrained_path=None,
 ):
     model = ModifiedResNet(
         layers=[3, 4, 6, 3],
@@ -254,8 +255,8 @@ def modified_resnet50(
         last_stride=last_stride,
         input_resolution=input_resolution,
     )
-    if pretrained:
-        p = torch.jit.load("pretrained/clip/RN50.pt").state_dict()
+    if pretrained_path:
+        p = torch.jit.load(pretrained_path).state_dict()
         model.load_state_dict(
             state_filter(
                 p,
@@ -269,7 +270,7 @@ def modified_resnet50(
 def modified_resnet101(
     input_resolution,
     last_stride,
-    pretrained=False,
+    pretrained_path=None,
 ):
     model = ModifiedResNet(
         layers=[3, 4, 23, 3],
@@ -278,8 +279,8 @@ def modified_resnet101(
         last_stride=last_stride,
         input_resolution=input_resolution,
     )
-    if pretrained:
-        p = torch.jit.load("pretrained/clip/RN101.pt").state_dict()
+    if pretrained_path:
+        p = torch.jit.load(pretrained_path).state_dict()
         model.load_state_dict(
             state_filter(
                 p,
@@ -295,12 +296,12 @@ def build_m_resnet(cfg):
         model = modified_resnet50(
             (cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH),
             cfg.MODEL.RESNET.RES5_STRIDE,
-            pretrained=True,
+            pretrained_path=os.path.join(cfg.ROOT, "pretrained/clip/RN50.pt"),
         )
     elif cfg.MODEL.VISUAL_MODEL == "m_resnet101":
         model = modified_resnet101(
             (cfg.INPUT.HEIGHT, cfg.INPUT.WIDTH),
             cfg.MODEL.RESNET.RES5_STRIDE,
-            pretrained=True,
+            pretrained_path=os.path.join(cfg.ROOT, "pretrained/clip/RN101.pt"),
         )
     return model
