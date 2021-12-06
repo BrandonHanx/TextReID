@@ -22,6 +22,12 @@ def main():
         description="PyTorch Image-Text Matching Inference"
     )
     parser.add_argument(
+        "--root",
+        default="./",
+        help="root path",
+        type=str,
+    )
+    parser.add_argument(
         "--config-file",
         default="",
         metavar="FILE",
@@ -64,12 +70,15 @@ def main():
 
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
+    cfg.ROOT = args.root
     cfg.freeze()
 
     model = build_model(cfg)
     model.to(cfg.MODEL.DEVICE)
 
-    output_dir = os.path.join("./output", args.config_file[8:-5])
+    output_dir = os.path.join(
+        args.root, "./output", "/".join(args.config_file.split("/")[-2:])[:-5]
+    )
     checkpointer = Checkpointer(model, save_dir=output_dir)
     _ = checkpointer.load(args.checkpoint_file)
 

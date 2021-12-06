@@ -19,13 +19,13 @@ class DatasetCatalog:
     }
 
     @staticmethod
-    def get(name):
+    def get(root, name):
         if "cuhkpedes" in name:
             data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(
-                root=os.path.join(data_dir, attrs["img_dir"]),
-                ann_file=os.path.join(data_dir, attrs["ann_file"]),
+                root=os.path.join(root, data_dir, attrs["img_dir"]),
+                ann_file=os.path.join(root, data_dir, attrs["ann_file"]),
             )
             return dict(
                 factory="CUHKPEDESDataset",
