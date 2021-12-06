@@ -14,6 +14,7 @@ class GRU(nn.Module):
         drop_out,
         bidirectional,
         use_onehot,
+        root,
     ):
         super().__init__()
 
@@ -28,7 +29,7 @@ class GRU(nn.Module):
             else:
                 self.embed = nn.Linear(vocab_size, embed_size)
 
-            vocab_dict = load_vocab_dict(use_onehot)
+            vocab_dict = load_vocab_dict(root, use_onehot)
             assert vocab_size == vocab_dict.shape[1]
             self.vocab_dict = torch.tensor(vocab_dict).cuda().float()
 
@@ -98,6 +99,7 @@ def build_gru(cfg, bidirectional):
     embed_size = cfg.MODEL.GRU.EMBEDDING_SIZE
     num_layer = cfg.MODEL.GRU.NUM_LAYER
     drop_out = 1 - cfg.MODEL.GRU.DROPOUT_KEEP_PROB
+    root = cfg.ROOT
 
     model = GRU(
         hidden_dim,
@@ -107,6 +109,7 @@ def build_gru(cfg, bidirectional):
         drop_out,
         bidirectional,
         use_onehot,
+        root,
     )
 
     if cfg.MODEL.FREEZE:
