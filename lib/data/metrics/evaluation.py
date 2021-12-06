@@ -34,11 +34,6 @@ def rank(similarity, q_pids, g_pids, topk=[1, 5, 10], get_mAP=True):
     tmp_cmc = torch.stack(tmp_cmc, 1) * matches
     AP = tmp_cmc.sum(1) / num_rel  # q
     mAP = AP.mean() * 100
-    #     np.save("cmc.npy", matches)
-    #     np.save("similarity.npy", similarity)
-    #     np.save("q_pids.npy", q_pids)
-    #     np.save("g_pids.npy", g_pids)
-    #     np.save("indices.npy", indices)
     return all_cmc, mAP, indices
 
 
@@ -92,7 +87,7 @@ def get_unique(image_ids):
     return keep_id
 
 
-def evaluation_common(
+def evaluation(
     dataset,
     predictions,
     output_folder,
@@ -189,66 +184,4 @@ def evaluation_common(
         i2t_cmc, _ = rank(similarity.t(), image_pid, text_pid, topk, get_mAP=False)
         results = torch.stack((topk, t2i_cmc, i2t_cmc)).t().cpu().numpy()
         logger.info("\n" + table_log(results, headers=["topk", "t2i", "i2t"]))
-    return t2i_cmc[0]
-
-
-def evaluation_cross(
-    dataset,
-    predictions,
-    output_folder,
-    topk,
-    save_data=True,
-    sim_calculator=None,
-):
-    logger = logging.getLogger("PersonSearch.inference")
-    data_dir = os.path.join(output_folder, "inference_data.npz")
-
-    if predictions is None:
-        inference_data = np.load(data_dir)
-        logger.info("Load inference data from {}".format(data_dir))
-        image_pid = torch.tensor(inference_data["image_pid"])
-        text_pid = torch.tensor(inference_data["text_pid"])
-        similarity = torch.tensor(inference_data["similarity"])
-    else:
-        image_ids, pids = [], []
-        patch_embed, word_embed, key_padding_mask = [], [], []
-
-        # FIXME: need optimization
-        for idx, prediction in predictions.items():
-            image_id, pid = dataset.get_id_info(idx)
-            image_ids.append(image_id)
-            pids.append(pid)
-            patch_embed.append(prediction[0])
-            word_embed.append(prediction[1])
-            key_padding_mask.append(prediction[2])
-
-        image_pid = torch.tensor(pids)
-        text_pid = torch.tensor(pids)
-        patch_embed = torch.stack(patch_embed, dim=0)
-        word_embed = torch.stack(word_embed, dim=0)
-        key_padding_mask = torch.stack(key_padding_mask, dim=0)
-
-        keep_id = get_unique(image_ids)
-        patch_embed = patch_embed[keep_id]
-        image_pid = image_pid[keep_id]
-
-        with torch.no_grad():
-            similarity = sim_calculator(
-                patch_embed, word_embed, key_padding_mask, chunk_size=1024
-            )
-
-        if save_data:
-            np.savez(
-                data_dir,
-                image_pid=image_pid.cpu().numpy(),
-                text_pid=text_pid.cpu().numpy(),
-                similarity=similarity.cpu().numpy(),
-            )
-
-    topk = torch.tensor(topk)
-
-    t2i_cmc, _ = rank(similarity, text_pid, image_pid, topk, get_mAP=False)
-    i2t_cmc, _ = rank(similarity.t(), image_pid, text_pid, topk, get_mAP=False)
-    results = torch.stack((topk, t2i_cmc, i2t_cmc)).t().cpu().numpy()
-    logger.info("\n" + table_log(results, headers=["topk", "t2i", "i2t"]))
     return t2i_cmc[0]

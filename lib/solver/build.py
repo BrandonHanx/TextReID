@@ -5,25 +5,16 @@ from .lr_scheduler import LRSchedulerWithWarmup
 
 def make_optimizer(cfg, model):
     params = []
-    if cfg.SOLVER.PART_STRATEGRY:
-        params = [
-            {"params": model.embed_model.parameters()},
-            {
-                "params": model.visual_model.parameters(),
-                "weight_decay": cfg.SOLVER.WEIGHT_DECAY,
-            },
-            {"params": model.textual_model.parameters()},
-        ]
-    else:
-        for key, value in model.named_parameters():
-            if not value.requires_grad:
-                continue
-            lr = cfg.SOLVER.BASE_LR
-            weight_decay = cfg.SOLVER.WEIGHT_DECAY
-            if "bias" in key:
-                lr = cfg.SOLVER.BASE_LR * cfg.SOLVER.BIAS_LR_FACTOR
-                weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
-            params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
+
+    for key, value in model.named_parameters():
+        if not value.requires_grad:
+            continue
+        lr = cfg.SOLVER.BASE_LR
+        weight_decay = cfg.SOLVER.WEIGHT_DECAY
+        if "bias" in key:
+            lr = cfg.SOLVER.BASE_LR * cfg.SOLVER.BIAS_LR_FACTOR
+            weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
+        params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
 
     if cfg.SOLVER.OPTIMIZER == "SGD":
         optimizer = torch.optim.SGD(

@@ -4,14 +4,11 @@ from lib.config.paths_catalog import DatasetCatalog
 from lib.utils.comm import get_world_size
 
 from . import datasets as D
-from . import samplers
 from .collate_batch import collate_fn
-from .transforms import build_crop_transforms, build_transforms
+from .transforms import build_transforms
 
 
-def build_dataset(
-    cfg, dataset_list, transforms, crop_transforms, dataset_catalog, is_train=True
-):
+def build_dataset(cfg, dataset_list, transforms, dataset_catalog, is_train=True):
     if not isinstance(dataset_list, (list, tuple)):
         raise RuntimeError(
             "dataset_list should be a list of strings, got {}".format(dataset_list)
@@ -25,11 +22,7 @@ def build_dataset(
 
         if data["factory"] == "CUHKPEDESDataset":
             args["use_onehot"] = cfg.DATASETS.USE_ONEHOT
-            args["use_seg"] = cfg.DATASETS.USE_SEG
-            args["use_att"] = cfg.DATASETS.USE_ATT
-            args["crop_transforms"] = crop_transforms
             args["max_length"] = 100
-            args["max_attribute_length"] = 25
 
         # make dataset from factory
         dataset = factory(**args)
@@ -58,18 +51,9 @@ def make_data_sampler(dataset, shuffle, distributed):
 
 
 def make_batch_data_sampler(cfg, dataset, sampler, images_per_batch, is_train=True):
-    if is_train and cfg.DATALOADER.EN_SAMPLER:
-        batch_sampler = samplers.TripletSampler(
-            sampler,
-            dataset,
-            images_per_batch,
-            cfg.DATALOADER.IMS_PER_ID,
-            drop_last=True,
-        )
-    else:
-        batch_sampler = torch.utils.data.sampler.BatchSampler(
-            sampler, images_per_batch, drop_last=is_train
-        )
+    batch_sampler = torch.utils.data.sampler.BatchSampler(
+        sampler, images_per_batch, drop_last=is_train
+    )
     return batch_sampler
 
 
@@ -98,14 +82,7 @@ def make_data_loader(cfg, is_train=True, is_distributed=False):
 
     transforms = build_transforms(cfg, is_train)
 
-    if cfg.DATASETS.USE_SEG:
-        crop_transforms = build_crop_transforms(cfg)
-    else:
-        crop_transforms = None
-
-    datasets = build_dataset(
-        cfg, dataset_list, transforms, crop_transforms, DatasetCatalog, is_train
-    )
+    datasets = build_dataset(cfg, dataset_list, transforms, DatasetCatalog, is_train)
 
     data_loaders = []
     for dataset in datasets:

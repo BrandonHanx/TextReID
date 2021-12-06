@@ -2,7 +2,6 @@ from collections import namedtuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 
 
@@ -99,77 +98,13 @@ class Bottleneck(nn.Module):
         return out
 
 
-class AttentionPool2d(nn.Module):
-    def __init__(
-        self, spacial_dim, embed_dim, num_heads, patch_size=1, output_dim=None
-    ):
-        super().__init__()
-        self.proj_conv = None
-        if patch_size > 1:
-            self.proj_conv = nn.Conv2d(
-                embed_dim,
-                embed_dim,
-                kernel_size=patch_size,
-                stride=patch_size,
-                bias=False,
-            )
-        self.positional_embedding = nn.Parameter(
-            torch.randn(
-                (spacial_dim[0] // patch_size) * (spacial_dim[1] // patch_size) + 1,
-                embed_dim,
-            )
-            / embed_dim ** 0.5
-        )
-        self.k_proj = nn.Linear(embed_dim, embed_dim)
-        self.q_proj = nn.Linear(embed_dim, embed_dim)
-        self.v_proj = nn.Linear(embed_dim, embed_dim)
-        self.c_proj = nn.Linear(embed_dim, output_dim or embed_dim)
-        self.num_heads = num_heads
-
-    def forward(self, x):
-        if self.proj_conv is not None:
-            x = self.proj_conv(x)
-        x = x.reshape(x.shape[0], x.shape[1], x.shape[2] * x.shape[3]).permute(
-            2, 0, 1
-        )  # NCHW -> (HW)NC
-        x = torch.cat([x.mean(dim=0, keepdim=True), x], dim=0)  # (HW+1)NC
-        x = x + self.positional_embedding[:, None, :].to(x.dtype)  # (HW+1)NC
-        x, _ = F.multi_head_attention_forward(
-            query=x,
-            key=x,
-            value=x,
-            embed_dim_to_check=x.shape[-1],
-            num_heads=self.num_heads,
-            q_proj_weight=self.q_proj.weight,
-            k_proj_weight=self.k_proj.weight,
-            v_proj_weight=self.v_proj.weight,
-            in_proj_weight=None,
-            in_proj_bias=torch.cat(
-                [self.q_proj.bias, self.k_proj.bias, self.v_proj.bias]
-            ),
-            bias_k=None,
-            bias_v=None,
-            add_zero_attn=False,
-            dropout_p=0,
-            out_proj_weight=self.c_proj.weight,
-            out_proj_bias=self.c_proj.bias,
-            use_separate_proj_weight=True,
-            training=self.training,
-            need_weights=False,
-        )
-
-        return x[0]
-
-
 class ResNet(nn.Module):
     def __init__(
         self,
         model_arch,
         res5_stride=2,
         res5_dilation=1,
-        mode="seg",
         pretrained=True,
-        attn_pool=False,
     ):
         super().__init__()
         block = model_arch.block
@@ -192,26 +127,8 @@ class ResNet(nn.Module):
         else:
             self.load_state_dict(torch.load(pretrained))
 
-        self.attn_pool = None
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.out_channels = 512 * block.expansion
-        if attn_pool:
-            self.attn_pool = nn.AdaptiveAvgPool2d((1, 1))
-        #             output_dim = 512  # FIXME: need flexible
-        #             input_dim = (384, 128)
-        #             embed_dim = self.out_channels
-        #             self.out_channels = output_dim
-        #             down_ratio = 16 if res5_stride == 1 else 32
-        #             num_heads = 32
-        #             spacial_dim = (input_dim[0] // down_ratio, input_dim[1] // down_ratio)
-        #             self.attn_pool = AttentionPool2d(
-        #                 spacial_dim, embed_dim, num_heads, 2, output_dim
-        #             )
-
-        self.mode = mode
-        if self.mode in ["seg", "segpool"]:
-            self.out_channels = 256 * block.expansion
-        if self.mode == "seg":
-            del self.layer4
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1):
         downsample = None
@@ -244,15 +161,10 @@ class ResNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.avgpool(x)
 
-        if self.mode == "seg":
-            return x
-        y = self.layer4(x)
-        if self.mode == "segpool":
-            return y, x
-        if self.attn_pool is not None:
-            y = self.attn_pool(y).squeeze()
-        return y
+        return x
 
     def _init_weight(self):
         for m in self.modules():
@@ -304,8 +216,6 @@ def build_resnet(cfg):
     arch = cfg.MODEL.VISUAL_MODEL
     res5_stride = cfg.MODEL.RESNET.RES5_STRIDE
     res5_dilation = cfg.MODEL.RESNET.RES5_DILATION
-    mode = cfg.MODEL.EMBEDDING.EMBED_HEAD
-    attn_pool = cfg.MODEL.RESNET.ATTN_POOL
     pretrained = cfg.MODEL.RESNET.PRETRAINED
 
     model_arch = model_archs[arch]
@@ -313,9 +223,7 @@ def build_resnet(cfg):
         model_arch,
         res5_stride,
         res5_dilation,
-        mode,
         pretrained=pretrained,
-        attn_pool=attn_pool,
     )
 
     if cfg.MODEL.FREEZE:

@@ -1,23 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 
 import lib.models.losses as losses
-
-
-def infonce_loss(
-    v_pos,
-    v_neg,
-    t_pos,
-    t_neg,
-    T=0.07,
-):
-    v_logits = torch.cat([v_pos, v_neg], dim=1) / T
-    t_logits = torch.cat([t_pos, t_neg], dim=1) / T
-    labels = torch.zeros(v_logits.shape[0], dtype=torch.long).cuda()
-    loss = F.cross_entropy(v_logits, labels) + F.cross_entropy(t_logits, labels)
-    return loss
 
 
 class LossComputation(nn.Module):
@@ -42,7 +27,7 @@ class LossComputation(nn.Module):
                 labels,
                 epsilon=self.epsilon,
             ),
-            "infonce_loss": infonce_loss(
+            "infonce_loss": losses.infonce_loss(
                 v_pos,
                 v_neg,
                 t_pos,

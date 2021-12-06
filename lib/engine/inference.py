@@ -7,7 +7,7 @@ from collections import defaultdict
 import torch
 from tqdm import tqdm
 
-from lib.data.metrics import evaluation_common, evaluation_cross
+from lib.data.metrics import evaluation
 from lib.utils.comm import all_gather, is_main_process, synchronize
 
 
@@ -86,34 +86,11 @@ def inference(
         if not is_main_process():
             return
 
-    if not hasattr(model.embed_model, "inference_mode"):
-        return evaluation_common(
-            dataset=dataset,
-            predictions=predictions,
-            output_folder=output_folder,
-            save_data=save_data,
-            rerank=rerank,
-            topk=[1, 5, 10],
-        )
-
-    if model.embed_model.inference_mode == "common":
-        return evaluation_common(
-            dataset=dataset,
-            predictions=predictions,
-            output_folder=output_folder,
-            save_data=save_data,
-            rerank=rerank,
-            topk=[1, 5, 10],
-        )
-
-    if model.embed_model.inference_mode == "cross":
-        assert hasattr(model.embed_model, "get_similarity")
-        sim_calculator = model.embed_model.get_similarity
-        return evaluation_cross(
-            dataset=dataset,
-            predictions=predictions,
-            output_folder=output_folder,
-            save_data=save_data,
-            sim_calculator=sim_calculator,
-            topk=[1, 5, 10],
-        )
+    return evaluation(
+        dataset=dataset,
+        predictions=predictions,
+        output_folder=output_folder,
+        save_data=save_data,
+        rerank=rerank,
+        topk=[1, 5, 10],
+    )
