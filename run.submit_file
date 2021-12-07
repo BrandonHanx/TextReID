@@ -7,7 +7,7 @@ log    = condor_log/c$(cluster).p$(process).log
 output = condor_log/c$(cluster).p$(process).out
 error  = condor_log/c$(cluster).p$(process).error
 
-environment = "mount=/vol/research/xmodal_dl/,/user/HS500/xh00414"
+environment = "mount=/vol/research/xmodal_dl/"
 
 +CanCheckpoint = True
 +GPUMem = 11000
@@ -25,5 +25,5 @@ requirements = (CUDAGlobalMemoryMb > 4500) && \
                (CUDADeviceName == "GeForce RTX 3090")
 
 queue arguments from (
-  --config-file $ENV(PWD)/configs/cuhkpedes/moco_gru_cliprn50_ls_bs128_2048.yaml
+  --config-file $ENV(PWD)/configs/cuhkpedes/configs/cuhkpedes/baseline_gru_rn50_ls_bs128.yaml
 )

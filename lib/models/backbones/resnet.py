@@ -122,7 +122,7 @@ class ResNet(nn.Module):
             block, 512, layers[3], stride=res5_stride, dilation=res5_dilation
         )
 
-        if pretrained is not None:
+        if pretrained is None:
             self.load_state_dict(remove_fc(model_zoo.load_url(model_arch.url)))
         else:
             self.load_state_dict(torch.load(pretrained))

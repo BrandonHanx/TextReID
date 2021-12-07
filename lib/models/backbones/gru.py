@@ -45,13 +45,9 @@ class GRU(nn.Module):
 
         self._init_weight()
 
-    def forward(self, captions, equal_length=True):
-        if equal_length:
-            text = torch.stack([caption.text for caption in captions], dim=1)
-            text_length = torch.stack([caption.length for caption in captions], dim=1)
-        else:
-            text = torch.cat([caption.text for caption in captions], dim=0)
-            text_length = torch.cat([caption.length for caption in captions], dim=0)
+    def forward(self, captions):
+        text = torch.stack([caption.text for caption in captions], dim=1)
+        text_length = torch.stack([caption.length for caption in captions], dim=1)
 
         text_length = text_length.view(-1)
         text = text.view(-1, text.size(-1))  # b x l
