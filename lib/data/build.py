@@ -22,7 +22,7 @@ def build_dataset(cfg, dataset_list, transforms, dataset_catalog, is_train=True)
 
         if data["factory"] == "CUHKPEDESDataset":
             args["use_onehot"] = cfg.DATASETS.USE_ONEHOT
-            args["max_length"] = 100
+            args["max_length"] = 105
 
         # make dataset from factory
         dataset = factory(**args)

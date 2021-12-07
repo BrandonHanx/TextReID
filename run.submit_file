@@ -25,5 +25,5 @@ requirements = (CUDAGlobalMemoryMb > 4500) && \
                (CUDADeviceName == "GeForce RTX 3090")
 
 queue arguments from (
-  --config-file $ENV(PWD)/configs/cuhkpedes/configs/cuhkpedes/baseline_gru_rn50_ls_bs128.yaml
+  --config-file $ENV(PWD)/configs/cuhkpedes/moco_gru_cliprn50_ls_bs128_2048.yaml
 )

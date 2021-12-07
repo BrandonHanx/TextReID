@@ -239,7 +239,7 @@ def state_filter(state_dict, final_stage_resolution):
             k = k[7:]
         if k == "attnpool.positional_embedding" and final_stage_resolution != (7, 7):
             v = resize_pos_embed(v, final_stage_resolution)
-            out_dict[k] = v
+        out_dict[k] = v
     return out_dict
 
 
