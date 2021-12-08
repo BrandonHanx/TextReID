@@ -108,13 +108,6 @@ class MoCoHead(nn.Module):
         ptr = (ptr + batch_size) % self.K  # move pointer
         self.queue_ptr[0] = ptr
 
-    @staticmethod
-    def _random_shuffle(origin, k=4):
-        origin_idx = torch.arange(origin.shape[0]).reshape(-1, k)
-        shuffle_perm = torch.randperm(k)
-        shuffle_idx = origin_idx[:, shuffle_perm].view(-1)
-        return origin[shuffle_idx.cuda()]
-
     def forward(self, images, captions):
         N = images.shape[0]
 

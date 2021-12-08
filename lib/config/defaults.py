@@ -19,6 +19,7 @@ _C.DATALOADER = CN()
 # Number of data loading threads
 _C.DATALOADER.NUM_WORKERS = 4
 _C.DATALOADER.IMS_PER_ID = 4
+_C.DATALOADER.EN_SAMPLER = True
 
 
 # -----------------------------------------------------------------------------

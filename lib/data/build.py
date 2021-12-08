@@ -4,6 +4,7 @@ from lib.config.paths_catalog import DatasetCatalog
 from lib.utils.comm import get_world_size
 
 from . import datasets as D
+from . import samplers
 from .collate_batch import collate_fn
 from .transforms import build_transforms
 
@@ -51,9 +52,18 @@ def make_data_sampler(dataset, shuffle, distributed):
 
 
 def make_batch_data_sampler(cfg, dataset, sampler, images_per_batch, is_train=True):
-    batch_sampler = torch.utils.data.sampler.BatchSampler(
-        sampler, images_per_batch, drop_last=is_train
-    )
+    if is_train and cfg.DATALOADER.EN_SAMPLER:
+        batch_sampler = samplers.TripletSampler(
+            sampler,
+            dataset,
+            images_per_batch,
+            cfg.DATALOADER.IMS_PER_ID,
+            drop_last=True,
+        )
+    else:
+        batch_sampler = torch.utils.data.sampler.BatchSampler(
+            sampler, images_per_batch, drop_last=is_train
+        )
     return batch_sampler
 
 
