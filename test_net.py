@@ -103,8 +103,8 @@ def main():
             dataset_name=dataset_name,
             device=cfg.MODEL.DEVICE,
             output_folder=output_folder,
-            save_data=True,
-            rerank=False,
+            save_data=False,
+            rerank=True,
         )
         synchronize()
 

@@ -41,50 +41,36 @@ def jaccard(a_list, b_list):
     return float(len(set(a_list) & set(b_list))) / float(len(set(a_list) | set(b_list)))
 
 
-def jaccard_mat(row_nn, col_nn, shape):
-    jaccard_sim = np.zeros(shape)
+def jaccard_mat(row_nn, col_nn):
+    jaccard_sim = np.zeros((row_nn.shape[0], col_nn.shape[0]))
     # FIXME: need optimization
-    for i in range(min(shape[0], row_nn.shape[0])):
-        for j in range(min(shape[1], col_nn.shape[0])):
+    for i in range(row_nn.shape[0]):
+        for j in range(col_nn.shape[0]):
             jaccard_sim[i, j] = jaccard(row_nn[i], col_nn[j])
-    return jaccard_sim
+    return torch.from_numpy(jaccard_sim)
 
 
-def visual_neighbor_mat(single_feat, cross_sim, neighbor_num=5):
-    cross_sim = cross_sim.t().cpu().numpy()  # v * t
-    single_sim = torch.matmul(single_feat, single_feat.t()).cpu().numpy()  # v * v
+def k_reciprocal(q_feats, g_feats, neighbor_num=5, alpha=0.05):
+    qg_sim = torch.matmul(q_feats, g_feats.t())  # q * g
+    gg_sim = torch.matmul(g_feats, g_feats.t())  # g * g
 
-    cross_indices = np.argsort(-cross_sim, axis=1)
-    single_indices = np.argsort(-single_sim, axis=1)
-    cross_nn = cross_indices[:, :neighbor_num]  # v * n
-    single_nn = single_indices[:, :neighbor_num]  # v * n
+    qg_indices = torch.argsort(qg_sim, dim=1, descending=True)
+    gg_indices = torch.argsort(gg_sim, dim=1, descending=True)
 
-    jaccard_sim = jaccard_mat(cross_nn, single_nn, cross_sim.shape)  # v * t
-    return torch.Tensor(jaccard_sim).t().cuda()  # t * v
+    qg_nn = qg_indices[:, :neighbor_num]  # q * n
+    gg_nn = gg_indices[:, :neighbor_num]  # g * n
 
-
-def textual_neighbor_mat(single_feat, cross_sim, neighbor_num=5):
-    cross_sim = cross_sim.cpu().numpy()  # t * v
-    single_sim = torch.matmul(single_feat, single_feat.t()).cpu().numpy()  # t * t
-
-    cross_indices = np.argsort(-cross_sim, axis=1)
-    single_indices = np.argsort(-single_sim, axis=1)
-    cross_nn = cross_indices[:, :neighbor_num]  # t * n
-    single_nn = single_indices[:, :neighbor_num]  # t * n
-
-    jaccard_sim = jaccard_mat(cross_nn, single_nn, cross_sim.shape)  # t * v
-    return torch.Tensor(jaccard_sim).cuda()
+    jaccard_sim = jaccard_mat(qg_nn.cpu().numpy(), gg_nn.cpu().numpy())  # q * g
+    jaccard_sim = jaccard_sim.to(qg_sim.device)
+    return alpha * jaccard_sim  # q * g
 
 
 def get_unique(image_ids):
-    keep_id = []
-    tmp = 0
+    keep_idx = {}
     for idx, image_id in enumerate(image_ids):
-        if (image_id - tmp) > 0:
-            keep_id.append(idx)
-            tmp = image_id
-    keep_id = torch.tensor(keep_id)
-    return keep_id
+        if image_id not in keep_idx.keys():
+            keep_idx[image_id] = idx
+    return torch.tensor(list(keep_idx.values()))
 
 
 def evaluation(
@@ -124,9 +110,9 @@ def evaluation(
         image_global = torch.stack(image_global, dim=0)
         text_global = torch.stack(text_global, dim=0)
 
-        keep_id = get_unique(image_ids)
-        image_global = image_global[keep_id]
-        image_pid = image_pid[keep_id]
+        keep_idx = get_unique(image_ids)
+        image_global = image_global[keep_idx]
+        image_pid = image_pid[keep_idx]
 
         image_global = F.normalize(image_global, p=2, dim=1)
         text_global = F.normalize(text_global, p=2, dim=1)
@@ -134,8 +120,8 @@ def evaluation(
         similarity = torch.matmul(text_global, image_global.t())
 
         if rerank:
-            rvn_mat = visual_neighbor_mat(image_global, similarity)
-            rtn_mat = textual_neighbor_mat(text_global, similarity)
+            rtn_mat = k_reciprocal(image_global, text_global)
+            rvn_mat = k_reciprocal(text_global, image_global)
 
         if save_data:
             if not rerank:
@@ -163,7 +149,7 @@ def evaluation(
         )
         t2i_cmc, t2i_mAP, _ = rank(similarity, text_pid, image_pid, topk, get_mAP=True)
         re_i2t_cmc, re_i2t_mAP, _ = rank(
-            rtn_mat.t() + similarity.t(), image_pid, text_pid, topk, get_mAP=True
+            rtn_mat + similarity.t(), image_pid, text_pid, topk, get_mAP=True
         )
         re_t2i_cmc, re_t2i_mAP, _ = rank(
             rvn_mat + similarity, text_pid, image_pid, topk, get_mAP=True
