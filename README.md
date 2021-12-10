@@ -7,6 +7,7 @@ This is the codebase for our [BMVC 2021 paper](https://arxiv.org/abs/2110.10807)
 Slides and video for the online presentation are now available at [BMVC 2021 virtual conference website](https://www.bmvc2021-virtualconference.com/conference/papers/paper_0044.html).
 
 ## Updates
+- (10/12/2021) Add download link of trained models.
 - (06/12/2021) Code refactor for easy reproduce.
 - (20/10/2021) Code released!
 
@@ -73,8 +74,10 @@ python test_net.py \
 --config-file configs/cuhkpedes/moco_gru_cliprn50_ls_bs128_2048.yaml \
 --checkpoint-file output/cuhkpedes/moco_gru_cliprn50_ls_bs128_2048/best.pth
 ```
+You can download our trained models (with CLIP RN50 and RN101) from [Google Drive](https://drive.google.com/drive/folders/1MoceVsLiByg3Sg8_9yByGSvR3ru15hJL?usp=sharing).
 
 ## TODO
+- [ ] Try larger pre-trained CLIP models.
 - [ ] Fix the bug of multi-gpu runninng.
 - [ ] Add dataloader for [ICFG-PEDES](https://github.com/zifyloo/SSAN).
 
